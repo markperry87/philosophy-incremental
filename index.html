@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philosophy Incremental</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="particles"></canvas>
+
+    <div id="era-overlay"></div>
+
+    <header id="header">
+        <div class="header-left">
+            <h1 id="game-title">Philosophy Incremental</h1>
+            <div id="era-name">The Age of Curiosity</div>
+        </div>
+        <div class="header-center">
+            <button id="think-btn" aria-label="Think">
+                <svg viewBox="0 0 100 100" class="think-icon">
+                    <circle cx="50" cy="40" r="28" fill="none" stroke="currentColor" stroke-width="3"/>
+                    <path d="M35 55 Q50 75 65 55" fill="none" stroke="currentColor" stroke-width="3"/>
+                    <circle cx="42" cy="35" r="3" fill="currentColor"/>
+                    <circle cx="58" cy="35" r="3" fill="currentColor"/>
+                    <path d="M44 85 L56 85 L54 95 L46 95 Z" fill="currentColor" opacity="0.5"/>
+                    <line x1="50" y1="8" x2="50" y2="2" stroke="currentColor" stroke-width="2" class="thought-ray"/>
+                    <line x1="72" y1="18" x2="78" y2="14" stroke="currentColor" stroke-width="2" class="thought-ray"/>
+                    <line x1="28" y1="18" x2="22" y2="14" stroke="currentColor" stroke-width="2" class="thought-ray"/>
+                </svg>
+                <span class="think-label">THINK</span>
+                <span id="think-value">+1</span>
+            </button>
+            <div id="thought-display">
+                <span id="thought-icon">&#x1F4AD;</span>
+                <span id="thought-count">0</span>
+                <span class="thought-label">Thoughts</span>
+            </div>
+            <div id="tps-display">
+                <span id="tps">0</span><span class="tps-label"> / sec</span>
+                <span class="multiplier-label">x<span id="multiplier">1</span></span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="save-btn" title="Save Game">&#x1F4BE;</button>
+            <button id="sound-btn" title="Toggle Sound">&#x1F50A;</button>
+            <button id="restart-btn" title="Restart Game">&#x21BB;</button>
+        </div>
+    </header>
+
+    <nav id="tabs">
+        <button class="tab active" data-tab="thinkers">Thinkers</button>
+        <button class="tab" data-tab="paradigms">Paradigms</button>
+        <button class="tab hidden" data-tab="wager">Wager</button>
+        <button class="tab hidden" data-tab="auto">Automation</button>
+        <button class="tab" data-tab="achievements">Achievements</button>
+        <button class="tab hidden" data-tab="transcendence">Transcendence</button>
+        <button class="tab" data-tab="stats">Statistics</button>
+    </nav>
+
+    <main id="main-content">
+        <section id="thinkers" class="tab-content active">
+            <div class="section-header">
+                <h2>Thinkers</h2>
+                <p class="section-desc">Recruit thinkers to generate thoughts passively</p>
+            </div>
+            <div id="click-upgrades"></div>
+            <div id="thinker-grid" class="card-grid"></div>
+        </section>
+
+        <section id="paradigms" class="tab-content">
+            <div class="section-header">
+                <h2>Paradigm Shifts</h2>
+                <p class="section-desc">Unlock philosophical eras to multiply all thought production</p>
+            </div>
+            <div id="paradigm-grid" class="card-grid"></div>
+            <div id="metaphilosophy-section" class="hidden">
+                <div class="section-header">
+                    <h2>Metaphilosophy</h2>
+                    <p class="section-desc">Multiply your multipliers</p>
+                </div>
+                <div id="metaphilosophy-grid" class="card-grid"></div>
+            </div>
+        </section>
+
+        <section id="wager" class="tab-content">
+            <div class="section-header">
+                <h2>Pascal's Wager</h2>
+                <p class="section-desc">Risk your thinkers for a chance to double them</p>
+            </div>
+            <div id="wager-content"></div>
+        </section>
+
+        <section id="auto" class="tab-content">
+            <div class="section-header">
+                <h2>Automation</h2>
+                <p class="section-desc">Configure automatic buying and wagering systems</p>
+            </div>
+            <div id="auto-content"></div>
+        </section>
+
+        <section id="achievements" class="tab-content">
+            <div class="section-header">
+                <h2>Achievements</h2>
+                <p class="section-desc">Each achievement grants a permanent +2% bonus to all production</p>
+            </div>
+            <div id="achievement-progress"></div>
+            <div id="achievement-grid" class="card-grid achievement-cards"></div>
+        </section>
+
+        <section id="transcendence" class="tab-content">
+            <div class="section-header">
+                <h2>Transcendence</h2>
+                <p class="section-desc">Reset your progress for permanent wisdom bonuses</p>
+            </div>
+            <div id="transcendence-content"></div>
+        </section>
+
+        <section id="stats" class="tab-content">
+            <div class="section-header">
+                <h2>Statistics</h2>
+                <p class="section-desc">Your philosophical journey by the numbers</p>
+            </div>
+            <div id="stats-content"></div>
+        </section>
+    </main>
+
+    <div id="toast-container"></div>
+    <div id="offline-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Welcome Back, Thinker</h2>
+            <p id="offline-message"></p>
+            <button id="offline-dismiss">Continue Thinking</button>
+        </div>
+    </div>
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="confirm-title">Confirm</h2>
+            <p id="confirm-message"></p>
+            <div class="modal-buttons">
+                <button id="confirm-yes">Yes</button>
+                <button id="confirm-no">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

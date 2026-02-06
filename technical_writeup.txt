@@ -1,0 +1,212 @@
+Philosophy Incremental - Technical Writeup
+
+Repository: markperry87/Incremental
+Stack: Vanilla HTML / CSS / JavaScript (no frameworks, no build tools)
+Created: February 1, 2025 | Last Updated: February 3, 2025
+
+================================================================================
+OVERVIEW
+================================================================================
+
+Philosophy Incremental is a browser-based idle/incremental game themed around
+the history of philosophical thought. The player accumulates "Thoughts" (the
+primary currency) by purchasing "Thinkers" -- units that passively generate
+thoughts over time. The game progresses through the intellectual history of
+civilization, from Animism to Cosmic Pantheism, with increasingly powerful
+upgrades and risk/reward mechanics.
+
+================================================================================
+ARCHITECTURE
+================================================================================
+
+The entire game is a single-page application built with zero dependencies --
+plain HTML, CSS, and one ~805-line JavaScript file. There is no bundler,
+transpiler, or framework.
+
+  File          Size        Purpose
+  ------------- ----------- -----------------------------------------------
+  index.html    ~70 lines   DOM skeleton with section containers
+  script.js     ~805 lines  All game logic, state, UI rendering, persistence
+  style.css     ~167 lines  Dark-theme styling, animations, responsive grid
+  images/       14 .webp    Thematic background images per paradigm tier
+
+The JS runs in strict mode and uses requestAnimationFrame for the main game
+loop, giving smooth frame-rate-dependent thought accumulation.
+
+================================================================================
+CORE GAME SYSTEMS
+================================================================================
+
+1. THINKERS (Production Units)
+-------------------------------
+
+15 thinker tiers, each doubling in base TPS (Thoughts Per Second):
+
+  Tier  Name                   Base Cost   Cost Scaling   Base TPS
+  ----  ---------------------  ---------   ------------   --------
+  0     Curious Man            10          1.8x           1
+  1     Storyteller            150         1.9x           2
+  2     Priest                 600         2.0x           4
+  3     Philosopher            3,000       2.1x           8
+  4     Alchemist              15,000      2.2x           16
+  5     Scientist              75,000      2.3x           32
+  6     Enlightenment Thinker  375,000     2.4x           64
+  7     Academic               1.5M        2.5x           128
+  8     Psychologist           7.5M        2.6x           256
+  9     Computer Scientist     37.5M       2.7x           512
+  10    AI Researcher          225M        2.8x           1,024
+  11    Quantum Thinker        1.5B        2.9x           2,048
+  12    Posthuman              15B         3.0x           4,096
+  13    Galactic Philosopher   150B        3.1x           8,192
+  14    Cosmic Deity           1.5T        3.2x           16,384
+
+Cost formula: floor(baseCost * costScaling^count)
+
+Thinkers unlock progressively -- purchasing your first of tier N reveals
+tier N+1. The first unit of tier 0 ("Curious Man") is given free at game start.
+
+2. PARADIGMS (Global Multipliers)
+----------------------------------
+
+13 paradigm upgrades representing philosophical eras. Each is a one-time
+purchase that adds to a global multiplier applied to all TPS:
+
+  - Early tiers (Animism through Scholasticism): 1.5x each, costs 5K-5M
+  - Mid tiers (Renaissance Humanism through Modernism): 2x each, costs 50M-5B
+  - Late tiers (Existentialism, Postmodernism): 2.5x each
+  - End-game (Computationalism through Cosmic Pantheism): 3x-5x, costs up to
+    5 Quadrillion
+
+The multiplier is additive within paradigms (all purchased paradigm multipliers
+are summed), then multiplied by the metaphilosophy multiplier. The visibility
+system shows only the next 1-2 unpurchased paradigms, hiding future tiers to
+keep the UI clean.
+
+Each paradigm also swaps the page's background image to a themed .webp,
+creating a visual sense of progression.
+
+3. METAPHILOSOPHY (Multiplier-on-Multiplier)
+----------------------------------------------
+
+Unlocks after purchasing "Renaissance Humanism" (paradigm 5). This is a
+secondary upgrade track of 5 tiers that multiplicatively stacks on top of the
+paradigm multiplier:
+
+  Name                      Cost     Multiplier
+  ------------------------  -------  ----------
+  Divine Reason             75M      2x
+  Empiricism                7.5B     2x
+  Multiplicity of Truths    750B     2x
+  Probabilistic Ontology    75T      3x
+  Omniconsciousness         7.5Qa    3x
+
+Maximum combined metaphilosophy multiplier: 2 * 2 * 2 * 3 * 3 = 72x on top
+of all paradigm bonuses.
+
+4. PASCAL'S WAGER (Gambling Mechanic)
+--------------------------------------
+
+Unlocked when the first Storyteller (tier 1) is purchased. A risk/reward
+system:
+
+  - Mechanic: Select a thinker type, wager all of them. Win = double the
+    count. Lose = lose all.
+  - Base win chance: 50%
+  - Level-up system (unlocked at tier 2 "Priest"): Spend thoughts to increase
+    win chance by 1 percentage point per level, up to 15 levels (65% max).
+    Costs escalate exponentially from 900 to 3.15T.
+
+Visual feedback: winning flashes the thinker button green, losing flashes it
+red (CSS keyframe animations).
+
+5. AUTO BUY & WAGER SYSTEM
+----------------------------
+
+Unlocked upon purchasing the first Alchemist (tier 4). Up to 10 auto-system
+slots can be purchased with escalating costs (73K to 1.73T).
+
+Each auto-system is assigned to a specific thinker type and configured with:
+
+  - Auto-Buy Stop Count: Automatically purchases the thinker until this count
+    is reached
+  - Auto-Wager Start Count: Begins auto-wagering once the thinker count
+    reaches this threshold
+  - Auto-Wager Stop Count: Stops wagering at this count
+  - Enable/Disable toggle
+
+Auto-wagers fire once per second (1000ms cooldown). On a loss, if
+auto-buy-stop > 0, the system attempts to immediately repurchase one unit to
+restart the cycle. A thinker can only be assigned to one active auto-system
+at a time.
+
+================================================================================
+GAME LOOP & RENDERING
+================================================================================
+
+  requestAnimationFrame(gameLoop)
+    -> deltaTime calculation
+    -> TPS * deltaTime + fractionalThoughts (accumulator pattern)
+    -> updateAutoSystems(currentTime)
+    -> updateUI()
+
+  - Fractional thought accumulation: A floating-point accumulator
+    (fractionalThoughts) ensures sub-integer TPS values don't lose precision
+    across frames.
+  - UI throttling: TPS/TPM display updates are throttled to every 100ms to
+    avoid excessive DOM writes.
+  - Focus-aware rendering: The metaphilosophy and auto-system sections skip
+    re-rendering if they contain the currently focused element, preventing
+    input fields and dropdowns from being destroyed while the user interacts
+    with them.
+
+================================================================================
+PERSISTENCE
+================================================================================
+
+  - Auto-save every 5 seconds via setInterval + localStorage
+  - Save on exit via beforeunload event
+  - Saves all thinker counts, paradigm purchases, metaphilosophy state,
+    Pascal's Wager level, and auto-system configurations
+  - Notably, lastWagerTime is deliberately excluded from saves (auto-wager
+    cooldowns reset on load)
+  - Restart clears localStorage and reloads the page
+
+================================================================================
+NUMBER FORMATTING
+================================================================================
+
+Custom suffix-based formatter handles large numbers with suffixes:
+K, M, B, T, Qa, Qi, Sx, Sp, Oc, No -- supporting display up to ~10^33.
+
+================================================================================
+PROGRESSION & ECONOMY DESIGN
+================================================================================
+
+The game features aggressive exponential scaling:
+
+  - Thinker costs scale with exponents from 1.8x to 3.2x per purchase
+  - Paradigm costs increase by 10x per tier
+  - The interplay of additive paradigm multipliers, multiplicative
+    metaphilosophy, and Pascal's Wager doubling creates distinct strategic
+    phases:
+
+    1. Early game:  Manual thinker purchasing, unlock paradigms
+    2. Mid game:    Pascal's Wager risk/reward for exponential thinker growth
+    3. Late game:   Auto-systems handle the buy/wager cycle, metaphilosophy
+                    stacking
+
+================================================================================
+NOTABLE TECHNICAL DETAILS
+================================================================================
+
+  - Event delegation: Thinker and paradigm purchase handlers use a single click
+    listener on the container with event.target.closest(), rather than
+    per-button listeners
+  - No framework overhead: Direct DOM manipulation via getElementById,
+    createElement, and innerHTML
+  - Background system: 14 themed background images swap dynamically based on
+    the highest purchased paradigm
+  - CSS Grid layout: Responsive grid for thinker/paradigm buttons using
+    repeat(auto-fill, minmax(250px, 1fr))
+  - Animation: Purchase feedback via animateThoughtCounter() (smooth counter
+    interpolation) and CSS keyframe glow effects for wager outcomes
