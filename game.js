@@ -4,9 +4,16 @@
 // SECTION 0: VERSION & CHANGELOG
 // ============================================================================
 
-const GAME_VERSION = '0.2.0';
+const GAME_VERSION = '0.2.1';
 
 const CHANGELOG = [
+    {
+        version: '0.2.1',
+        date: '2026-02-13',
+        changes: [
+            'Fixed: Restart Game now properly resets all progress',
+        ],
+    },
     {
         version: '0.2.0',
         date: '2026-02-13',
@@ -1571,8 +1578,11 @@ function showOfflineModal(seconds, thoughts) {
     document.getElementById('offline-modal').classList.remove('hidden');
 }
 
+let isRestarting = false;
+
 function restartGame() {
     showConfirm('Restart Game?', 'This will permanently erase ALL progress, including wisdom and eternal truths. This cannot be undone.', () => {
+        isRestarting = true;
         localStorage.removeItem('philosophyIncremental');
         location.reload();
     });
@@ -1695,9 +1705,9 @@ function initEventHandlers() {
         confirmCallback = null;
     });
 
-    // Save on exit
+    // Save on exit (unless restarting)
     window.addEventListener('beforeunload', () => {
-        saveGame();
+        if (!isRestarting) saveGame();
     });
 
     // Auto-save every 5 seconds
