@@ -1,6 +1,35 @@
 'use strict';
 
 // ============================================================================
+// SECTION 0: VERSION & CHANGELOG
+// ============================================================================
+
+const GAME_VERSION = '0.2.0';
+
+const CHANGELOG = [
+    {
+        version: '0.2.0',
+        date: '2026-02-13',
+        changes: [
+            'Reworked Automation: now capped at 3 slots that operate independently on different thinkers simultaneously',
+            'Simplified Automation config: each slot just has "Buy up to" and "Wager above" targets',
+            'Nerfed Transcendence: Wisdom bonus reduced from +10% to +3% per point',
+            'Removed Buy x1/x10/Max buttons (always buys x1 now)',
+            'Added this version history popup',
+        ],
+    },
+    {
+        version: '0.1.0',
+        date: '2026-02-01',
+        changes: [
+            'Initial release of Philosophy Incremental',
+            'Thinkers, Paradigms, Wagering, Automation, Transcendence',
+            'Achievements, Metaphilosophy, Era themes',
+        ],
+    },
+];
+
+// ============================================================================
 // SECTION 1: GAME CONFIGURATION
 // ============================================================================
 
@@ -71,8 +100,7 @@ const WAGER_LEVEL_COSTS = [
 ];
 
 const AUTO_SLOT_COSTS = [
-    73000, 365000, 1460000, 7300000, 29200000,
-    117000000, 468000000, 1870000000, 7480000000, 1730000000000
+    73000, 1460000, 29200000
 ];
 
 const CLICK_UPGRADES = [
@@ -403,7 +431,7 @@ function getTPS() {
         baseTPS += state.thinkers[i] * THINKERS[i].baseTPS;
     }
     let achievementBonus = 1 + Object.keys(state.achievements).length * 0.02;
-    let wisdomBonus = 1 + state.wisdom * 0.1;
+    let wisdomBonus = 1 + state.wisdom * 0.03;
     let eternalBonus = 1;
     if (state.eternalTruths.includes('tpsMult')) eternalBonus *= 1.5;
     if (state.eternalTruths.includes('tpsDouble')) eternalBonus *= 2;
@@ -420,7 +448,7 @@ function getMultiplier() {
         if (state.metaphilosophy[i]) metaMulti *= METAPHILOSOPHY[i].multi;
     }
     let achievementBonus = 1 + Object.keys(state.achievements).length * 0.02;
-    let wisdomBonus = 1 + state.wisdom * 0.1;
+    let wisdomBonus = 1 + state.wisdom * 0.03;
     let eternalBonus = 1;
     if (state.eternalTruths.includes('tpsMult')) eternalBonus *= 1.5;
     if (state.eternalTruths.includes('tpsDouble')) eternalBonus *= 2;
@@ -448,44 +476,11 @@ function getCurrentEra() {
 // SECTION 5: CORE MECHANICS
 // ============================================================================
 
-let buyAmount = 1; // 1, 10, or -1 for max
-
-function setBuyAmount(n) {
-    buyAmount = n;
-    tabDirty = true;
-}
-
-function getBuyCount(tier) {
-    const target = buyAmount === -1 ? 1000 : buyAmount;
-    let count = 0;
-    let budget = state.thoughts;
-    const t = THINKERS[tier];
-    const owned = state.thinkers[tier];
-    while (count < target) {
-        const cost = Math.floor(t.baseCost * Math.pow(t.costScale, owned + count));
-        if (budget < cost) break;
-        budget -= cost;
-        count++;
-    }
-    return count;
-}
-
-function getTotalCost(tier, count) {
-    let total = 0;
-    const t = THINKERS[tier];
-    for (let i = 0; i < count; i++) {
-        total += Math.floor(t.baseCost * Math.pow(t.costScale, state.thinkers[tier] + i));
-    }
-    return total;
-}
-
 function buyThinker(tier) {
-    const count = getBuyCount(tier);
-    if (count <= 0) return false;
-    const totalCost = getTotalCost(tier, count);
-    if (state.thoughts < totalCost) return false;
-    state.thoughts -= totalCost;
-    state.thinkers[tier] += count;
+    const cost = getThinkerCost(tier);
+    if (state.thoughts < cost) return false;
+    state.thoughts -= cost;
+    state.thinkers[tier]++;
     if (tier >= state.highestThinkerUnlocked && tier < THINKERS.length - 1) {
         state.highestThinkerUnlocked = tier + 1;
     }
@@ -562,10 +557,12 @@ function hexToRgba(hex, alpha) {
 
 function applyEraTheme(eraIndex) {
     const era = ERA_THEMES[Math.min(eraIndex, ERA_THEMES.length - 1)];
+    const idx = Math.min(eraIndex, ERA_THEMES.length - 1);
     document.documentElement.style.setProperty('--era-bg-1', era.bg);
     document.documentElement.style.setProperty('--accent', era.accent);
     document.documentElement.style.setProperty('--accent-glow', hexToRgba(era.accent, 0.3));
-    document.getElementById('era-overlay').style.background = era.bg;
+    const overlay = document.getElementById('era-overlay');
+    overlay.style.background = `url('assets/bg/era_${idx}.png') center/cover no-repeat, ${era.bg}`;
     document.getElementById('era-name').textContent = era.name;
     cachedAccentColor = era.accent;
 }
@@ -574,11 +571,15 @@ function applyEraTheme(eraIndex) {
 // SECTION 7: PASCAL'S WAGER
 // ============================================================================
 
-function doWager(thinkerIndex) {
+function doWager(thinkerIndex, isAuto) {
     if (state.thinkers[thinkerIndex] <= 0) return;
-    const now = Date.now();
-    if (now - lastWagerTime < 500) return;
-    lastWagerTime = now;
+
+    // Manual wagers have a click throttle; auto wagers are throttled by the 1s update loop
+    if (!isAuto) {
+        const now = Date.now();
+        if (now - lastWagerTime < 500) return;
+        lastWagerTime = now;
+    }
 
     const count = state.thinkers[thinkerIndex];
     const winChance = getWinChance();
@@ -637,9 +638,8 @@ function buyAutoSlot() {
     state.thoughts -= cost;
     state.autoSlots.push({
         thinkerIndex: 0,
-        buyStop: 0,
-        wagerStart: 0,
-        wagerStop: 0,
+        buyTarget: 0,
+        wagerAbove: 0,
         enabled: false,
     });
     playSound('buy');
@@ -656,8 +656,17 @@ function updateAutoSystems(now) {
         const ti = slot.thinkerIndex;
         if (ti < 0 || ti >= THINKERS.length) continue;
 
-        // Auto-buy
-        if (slot.buyStop > 0 && state.thinkers[ti] < slot.buyStop) {
+        // Migrate old slot format if needed
+        if (slot.buyStop !== undefined) {
+            slot.buyTarget = slot.buyStop || 0;
+            slot.wagerAbove = slot.wagerStart || 0;
+            delete slot.buyStop;
+            delete slot.wagerStart;
+            delete slot.wagerStop;
+        }
+
+        // Auto-buy: buy thinkers until we reach the target count
+        if (slot.buyTarget > 0 && state.thinkers[ti] < slot.buyTarget) {
             const cost = getThinkerCost(ti);
             if (state.thoughts >= cost) {
                 state.thoughts -= cost;
@@ -670,10 +679,9 @@ function updateAutoSystems(now) {
             }
         }
 
-        // Auto-wager
-        if (slot.wagerStart > 0 && state.thinkers[ti] >= slot.wagerStart) {
-            if (slot.wagerStop > 0 && state.thinkers[ti] >= slot.wagerStop) continue;
-            doWager(ti);
+        // Auto-wager: wager when count is at or above threshold
+        if (slot.wagerAbove > 0 && state.thinkers[ti] >= slot.wagerAbove) {
+            doWager(ti, true);
         }
     }
 }
@@ -1057,14 +1065,6 @@ function renderThinkers() {
         </div>`;
     }
 
-    // Buy amount selector
-    clickHtml += `<div style="display:flex;gap:8px;margin:12px 0;align-items:center;">
-        <span style="font-size:0.8rem;color:var(--text-secondary);">Buy:</span>
-        <button class="buy-amt-btn ${buyAmount === 1 ? 'active' : ''}" onclick="setBuyAmount(1)">x1</button>
-        <button class="buy-amt-btn ${buyAmount === 10 ? 'active' : ''}" onclick="setBuyAmount(10)">x10</button>
-        <button class="buy-amt-btn ${buyAmount === -1 ? 'active' : ''}" onclick="setBuyAmount(-1)">Max</button>
-    </div>`;
-
     clickDiv.innerHTML = clickHtml;
 
     // Thinker grid
@@ -1072,28 +1072,18 @@ function renderThinkers() {
     let html = '';
     for (let i = 0; i <= state.highestThinkerUnlocked && i < THINKERS.length; i++) {
         const t = THINKERS[i];
-        const count = getBuyCount(i);
-        const nextCostSingle = getThinkerCost(i);
-        const cost = count > 0 ? getTotalCost(i, count) : nextCostSingle;
-        const canAfford = count > 0;
+        const cost = getThinkerCost(i);
+        const canAfford = state.thoughts >= cost;
         const tps = t.baseTPS * state.thinkers[i];
-        let costLabel;
-        if (buyAmount === 1) {
-            costLabel = `Cost: ${formatNumber(nextCostSingle)}`;
-        } else if (count > 0) {
-            costLabel = `Buy ${count}: ${formatNumber(cost)}`;
-        } else {
-            costLabel = `Next: ${formatNumber(nextCostSingle)}`;
-        }
         html += `<div class="thinker-card ${canAfford ? '' : 'cant-afford'}" id="thinker-${i}" onclick="buyThinker(${i})" title="${t.name}: ${t.baseTPS} base TPS each">
-            <div class="thinker-icon">${getThinkerSVG(i)}</div>
+            <div class="thinker-icon"><img src="assets/thinkers/thinker_${i}.png" alt="${t.name}"></div>
             <div class="thinker-info">
                 <div class="thinker-name">${t.name}</div>
                 <div class="thinker-stats">
                     <span>${t.baseTPS} TPS each</span>
                     <span>${formatNumber(tps)} total</span>
                 </div>
-                <div class="thinker-cost">${costLabel}</div>
+                <div class="thinker-cost">Cost: ${formatNumber(cost)}</div>
             </div>
             <div class="thinker-count">${state.thinkers[i]}</div>
         </div>`;
@@ -1103,7 +1093,7 @@ function renderThinkers() {
     if (state.highestThinkerUnlocked < THINKERS.length - 1) {
         const nextIdx = state.highestThinkerUnlocked + 1;
         html += `<div class="thinker-card locked">
-            <div class="thinker-icon" style="opacity:0.3">${getThinkerSVG(nextIdx)}</div>
+            <div class="thinker-icon" style="opacity:0.3"><img src="assets/thinkers/thinker_${nextIdx}.png" alt="?" style="filter:brightness(0.3)"></div>
             <div class="thinker-info">
                 <div class="thinker-name" style="color:var(--text-muted);">???</div>
                 <div class="thinker-stats"><span>Purchase a ${THINKERS[state.highestThinkerUnlocked].name} to reveal</span></div>
@@ -1257,11 +1247,19 @@ function renderAuto() {
     // Skip re-render if user is interacting with inputs in this section
     if (content.contains(document.activeElement) && document.activeElement.tagName !== 'BUTTON') return;
 
-    let html = '';
+    let html = '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">Each slot operates independently. Set a thinker type, a buy target, and a wager threshold.</p>';
 
     // Render existing slots
     for (let i = 0; i < state.autoSlots.length; i++) {
         const slot = state.autoSlots[i];
+        // Migrate old format
+        if (slot.buyStop !== undefined) {
+            slot.buyTarget = slot.buyStop || 0;
+            slot.wagerAbove = slot.wagerStart || 0;
+            delete slot.buyStop;
+            delete slot.wagerStart;
+            delete slot.wagerStop;
+        }
         let options = '';
         for (let j = 0; j <= state.highestThinkerUnlocked && j < THINKERS.length; j++) {
             options += `<option value="${j}" ${slot.thinkerIndex === j ? 'selected' : ''}>${THINKERS[j].name}</option>`;
@@ -1278,16 +1276,12 @@ function renderAuto() {
                     <select onchange="updateAutoSlot(${i},'thinkerIndex',parseInt(this.value))">${options}</select>
                 </div>
                 <div class="auto-field">
-                    <label>Buy until count</label>
-                    <input type="number" min="0" value="${slot.buyStop}" onchange="updateAutoSlot(${i},'buyStop',parseInt(this.value)||0)">
+                    <label>Buy up to</label>
+                    <input type="number" min="0" value="${slot.buyTarget}" onchange="updateAutoSlot(${i},'buyTarget',parseInt(this.value)||0)" placeholder="0 = off">
                 </div>
                 <div class="auto-field">
-                    <label>Wager at count</label>
-                    <input type="number" min="0" value="${slot.wagerStart}" onchange="updateAutoSlot(${i},'wagerStart',parseInt(this.value)||0)">
-                </div>
-                <div class="auto-field">
-                    <label>Stop wager at</label>
-                    <input type="number" min="0" value="${slot.wagerStop}" onchange="updateAutoSlot(${i},'wagerStop',parseInt(this.value)||0)">
+                    <label>Wager above</label>
+                    <input type="number" min="0" value="${slot.wagerAbove}" onchange="updateAutoSlot(${i},'wagerAbove',parseInt(this.value)||0)" placeholder="0 = off">
                 </div>
             </div>
         </div>`;
@@ -1300,6 +1294,8 @@ function renderAuto() {
         html += `<button class="buy-auto-btn" onclick="buyAutoSlot()" ${canAfford ? '' : 'disabled'}>
             + New Auto Slot (Cost: ${formatNumber(cost)})
         </button>`;
+    } else {
+        html += `<p style="font-size:0.85rem;color:var(--text-muted);margin-top:12px;text-align:center;">All 3 automation slots unlocked.</p>`;
     }
 
     content.innerHTML = html;
@@ -1347,7 +1343,7 @@ function renderTranscendence() {
         <h3>Wisdom</h3>
         <div class="wisdom-display">${state.wisdom}</div>
         <p style="font-size:0.85rem;color:var(--text-secondary);">
-            Each point of Wisdom provides +10% to all production.<br>
+            Each point of Wisdom provides +3% to all production.<br>
             Transcendences: ${state.transcendenceCount}
         </p>
     </div>`;
@@ -1455,7 +1451,7 @@ function renderStats() {
 
 function saveGame() {
     const saveData = {
-        version: 2,
+        version: 3,
         state: {
             thoughts: state.thoughts,
             totalThoughts: state.totalThoughts,
@@ -1516,7 +1512,17 @@ function loadGame() {
         state.clickLevel = s.clickLevel || 0;
         state.totalClicks = s.totalClicks || 0;
         state.allTimeClicks = s.allTimeClicks || 0;
-        state.autoSlots = s.autoSlots || [];
+        state.autoSlots = (s.autoSlots || []).slice(0, AUTO_SLOT_COSTS.length);
+        // Migrate old slot format
+        for (const slot of state.autoSlots) {
+            if (slot.buyStop !== undefined) {
+                slot.buyTarget = slot.buyStop || 0;
+                slot.wagerAbove = slot.wagerStart || 0;
+                delete slot.buyStop;
+                delete slot.wagerStart;
+                delete slot.wagerStop;
+            }
+        }
         state.achievements = s.achievements || {};
         state.wisdom = s.wisdom || 0;
         state.transcendenceCount = s.transcendenceCount || 0;
@@ -1667,6 +1673,8 @@ function initEventHandlers() {
     });
 
     document.getElementById('restart-btn').addEventListener('click', restartGame);
+    document.getElementById('changelog-btn').addEventListener('click', showChangelog);
+    document.getElementById('changelog-dismiss').addEventListener('click', dismissChangelog);
 
     // Modal handlers
     document.getElementById('offline-dismiss').addEventListener('click', () => {
@@ -1706,6 +1714,52 @@ function initEventHandlers() {
     });
 }
 
+// ============================================================================
+// SECTION 17: CHANGELOG SYSTEM
+// ============================================================================
+
+function renderChangelog() {
+    const container = document.getElementById('changelog-entries');
+    const lastSeen = localStorage.getItem('philosophyIncremental_lastVersion') || '0.0.0';
+    let html = '';
+    for (const entry of CHANGELOG) {
+        const isNew = compareVersions(entry.version, lastSeen) > 0;
+        html += `<div class="changelog-entry">
+            <div class="changelog-version">v${entry.version}${isNew ? '<span class="changelog-new-badge">NEW</span>' : ''}</div>
+            <div class="changelog-date">${entry.date}</div>
+            <ul>${entry.changes.map(c => `<li>${c}</li>`).join('')}</ul>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+function compareVersions(a, b) {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    for (let i = 0; i < 3; i++) {
+        if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+        if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    }
+    return 0;
+}
+
+function showChangelog() {
+    renderChangelog();
+    document.getElementById('changelog-modal').classList.remove('hidden');
+}
+
+function dismissChangelog() {
+    document.getElementById('changelog-modal').classList.add('hidden');
+    localStorage.setItem('philosophyIncremental_lastVersion', GAME_VERSION);
+}
+
+function checkNewVersion() {
+    const lastSeen = localStorage.getItem('philosophyIncremental_lastVersion') || '0.0.0';
+    if (compareVersions(GAME_VERSION, lastSeen) > 0) {
+        showChangelog();
+    }
+}
+
 function init() {
     initParticles();
     loadGame();
@@ -1715,6 +1769,7 @@ function init() {
     renderHeader();
     renderActiveTab();
     initEventHandlers();
+    checkNewVersion();
     requestAnimationFrame(gameLoop);
 }
 

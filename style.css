@@ -71,8 +71,21 @@ body {
     width: 100%;
     height: 100%;
     background: var(--era-bg-1);
-    transition: background 2s ease;
+    background-size: cover;
+    background-position: center;
+    transition: background 2s ease, opacity 1s ease;
     z-index: 0;
+}
+
+#era-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    pointer-events: none;
 }
 
 /* --- Header --- */
@@ -302,6 +315,23 @@ body {
     white-space: nowrap;
     transition: all var(--transition-speed);
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab-icon {
+    width: 20px;
+    height: 20px;
+    image-rendering: pixelated;
+    border-radius: 3px;
+    opacity: 0.7;
+    transition: opacity var(--transition-speed);
+}
+
+.tab.active .tab-icon,
+.tab:hover .tab-icon {
+    opacity: 1;
 }
 
 .tab:hover {
@@ -450,12 +480,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px;
+    padding: 2px;
+    overflow: hidden;
 }
 
 .thinker-icon svg {
     width: 100%;
     height: 100%;
+}
+
+.thinker-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    image-rendering: pixelated;
 }
 
 .thinker-info {
@@ -1357,6 +1396,82 @@ body {
 
 .text-secondary {
     color: var(--accent-secondary);
+}
+
+/* --- Changelog Modal --- */
+.changelog-modal-content {
+    max-width: 520px;
+    max-height: 80vh;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.changelog-modal-content h2 {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.changelog-entry {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.changelog-entry:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.changelog-version {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.changelog-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.changelog-entry ul {
+    list-style: none;
+    padding: 0;
+}
+
+.changelog-entry li {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 3px 0 3px 16px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.changelog-entry li::before {
+    content: '\2022';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+}
+
+.changelog-modal-content > button {
+    display: block;
+    margin: 16px auto 0;
+}
+
+.changelog-new-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+    text-transform: uppercase;
 }
 
 .mt-16 {

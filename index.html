@@ -42,6 +42,7 @@
             </div>
         </div>
         <div class="header-right">
+            <button id="changelog-btn" title="Version History">&#x1F4CB;</button>
             <button id="save-btn" title="Save Game">&#x1F4BE;</button>
             <button id="sound-btn" title="Toggle Sound">&#x1F50A;</button>
             <button id="restart-btn" title="Restart Game">&#x21BB;</button>
@@ -49,13 +50,13 @@
     </header>
 
     <nav id="tabs">
-        <button class="tab active" data-tab="thinkers">Thinkers</button>
-        <button class="tab" data-tab="paradigms">Paradigms</button>
-        <button class="tab hidden" data-tab="wager">Wager</button>
-        <button class="tab hidden" data-tab="auto">Automation</button>
-        <button class="tab" data-tab="achievements">Achievements</button>
-        <button class="tab hidden" data-tab="transcendence">Transcendence</button>
-        <button class="tab" data-tab="stats">Statistics</button>
+        <button class="tab active" data-tab="thinkers"><img class="tab-icon" src="assets/tabs/tab_thinkers.png" alt="">Thinkers</button>
+        <button class="tab" data-tab="paradigms"><img class="tab-icon" src="assets/tabs/tab_paradigms.png" alt="">Paradigms</button>
+        <button class="tab hidden" data-tab="wager"><img class="tab-icon" src="assets/tabs/tab_wager.png" alt="">Wager</button>
+        <button class="tab hidden" data-tab="auto"><img class="tab-icon" src="assets/tabs/tab_auto.png" alt="">Automation</button>
+        <button class="tab" data-tab="achievements"><img class="tab-icon" src="assets/tabs/tab_achievements.png" alt="">Achievements</button>
+        <button class="tab hidden" data-tab="transcendence"><img class="tab-icon" src="assets/tabs/tab_transcendence.png" alt="">Transcendence</button>
+        <button class="tab" data-tab="stats"><img class="tab-icon" src="assets/tabs/tab_stats.png" alt="">Statistics</button>
     </nav>
 
     <main id="main-content">
@@ -141,6 +142,13 @@
                 <button id="confirm-yes">Yes</button>
                 <button id="confirm-no">No</button>
             </div>
+        </div>
+    </div>
+    <div id="changelog-modal" class="modal hidden">
+        <div class="modal-content changelog-modal-content">
+            <h2>Version History</h2>
+            <div id="changelog-entries"></div>
+            <button id="changelog-dismiss">Got it</button>
         </div>
     </div>
 

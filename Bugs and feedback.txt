@@ -1,0 +1,78 @@
+Feedback re: Philosophy Incremental
+
+1. 'Automation' needs to be re-worked:
+
+[DONE - v0.2.0] Reworked automation to 3 independent slots. Each slot operates on its own thinker type simultaneously. Simplified config to just "Buy up to" and "Wager above" (removed separate wager-start/wager-stop).
+
+-The Automation tab doesn't seem to work as intended. If you select two different types of thinkers in two different slots, you'd expect that they'd both be wagered automatically -- but they're not. It only does one for some reason.
+[DONE - v0.2.0] Fixed: all slots now process independently each tick.
+
+-Right now what I do is buy 10 slots and set them all to the same thinker type. This speeds up how quickly they buy up to the 'buy until count' listed. But it's painful and not fun, especially on mobile, setting all of them to a different thinker / different 'buy until counts'.
+[DONE - v0.2.0] Reduced to 3 slots max. Each slot works independently so you don't need duplicates.
+
+-I don't think there's any need for 'buy until count' and 'wager at count' to be different. When would you want them to be different? Just two numbers: how many to buy before it starts wagering and when to stop wagering.
+[DONE - v0.2.0] Simplified to two fields: "Buy up to" (target count) and "Wager above" (wager when count >= this).
+
+-What I suggest: have at most 3 slots. But have them function as you'd expect -- i.e. they can operate on different thinkers independently.
+[DONE - v0.2.0]
+
+-IN ADDITION to this: have upgrades for the slots, like 'buy speed' and 'wager speed'. Maybe even make the wager chance tied to each slot, so you need to upgrade that for each slot too.
+[TODO] Slot-specific upgrades (buy speed, wager speed, wager chance) -- future enhancement.
+
+-These automated wagerers need to be carefully calibrated. If they are too good, the game will be trivialized. If they're bad, you'll feel the need to do all wagering manually, which would suck.
+[TODO] Automation balance tuning -- ongoing.
+
+2. Transcendence is a fun mechanic, but currently WAY overpowered
+
+- Each point of wisdom giving +10% to all production is way too strong. After one transcendence, the game is extremely easy. After two, it's completely trivial.
+[DONE - v0.2.0] Nerfed from +10% to +3% per Wisdom point.
+
+- The Eternal Truths need to be rethought. Some are very strong (Wager Mastery) whereas some are pointless (Ancient Knowledge) at that point in the game.
+[TODO] Rebalance Eternal Truths.
+
+- Having to use your Wisdom to pay for Eternal Truths is feel-bad. You have to give up a huge chunk of production to gain some other benefit.
+[TODO] Consider making Eternal Truths use a separate currency or not reduce Wisdom production.
+
+3. Progression and End game
+
+- As it stands, it's too easy to max everything out. And on your first playthrough, certain paradigms go by much faster than others. Tough to balance, I know... but something needs to change to smooth out progression. It should always feel like you're making meaningful progress, but it shouldn't feel like you're just blowing by all the content: UNLESS you get really lucky. Then that contributes to the dopamine. OR if you're on a transcended run. In that case, you deserve to blow by things that used to be hard, and it feels great!
+[TODO] Progression pacing / balance pass.
+
+- Right now the end game is as follows: Transcend so that you have enough wisdom to make the game trivial (which isn't a ton), press the 'Think' button a few times to gain trillions, buy one of each thinker, max out all your paradigms etc. This takes about 30 seconds once you have enough Wisdom. Then, set an automater to wager on one of the two final Thinkers (Cosmic Deity or Galactic Philosopher) until you have a decent amount (2k or so). Then, now that you have a massive income, you can afford to repeatedly buy like 10 or so of the OTHER final thinker. Now use that higher starting point to wager for a higher target: like 20000. Go back and forth like this a bit until you have an ungodly amount of both, Transcend, repeat.
+[TODO] End-game variety / new mechanics needed.
+
+- Needless to say, it gets a little stale: BUT SOMETHING ABOUT IT ALSO HOLDS MY INTEREST!
+
+- I think the different mechanics should continue further. More achievements, more paradigms, etc.
+[TODO] More content: achievements, paradigms, etc.
+
+- BUT -- AND THIS IS THE MOST IMPORTANT THING -- THE PROGRESSION CANNOT FEEL LIKE JUST MORE OF THE SAME! If it's just a never ending progression of differently named thinkers, paradigms, etc, it will NOT be fun.
+[TODO] New unique mechanics for late game.
+
+-- For example, it's really cool that at a certain point you unlock automaters. More of stuff like that! But stuff you won't unlock -- WHOLE NEW MECHANICS -- until you're super deep into the game!
+[TODO] Deep-game mechanic unlocks.
+
+4. The 'Think' button
+
+- This is kind of fun but quickly becomes irrelevant.
+[TODO] Keep Think button relevant in late game.
+
+-- Keep it relevant maybe by incorporating it into some of those WHOLE NEW MECHANICS I'm requesting. One idea I had: maybe (randomly or at certain points? not sure) you are attacked by the Thought Police. You need to attack the thought police using your Think button -- if you've neglected your think button, you won't fare well! However, the there is also an element of dexterity / timing to the event which means that a skilled player who knows what to expect can still defeat the challenge potentially, despite an underlevelled Think button. Maybe if you lose the challenge you lose the whole run? Or if you lose, a whole section of your thinkers are destroyed?
+[TODO] Thought Police event / active mechanic -- great idea for future.
+
+-- This is an example of an OUTSIDE THE BOX mechanic that you should implement. But there should be MANY of these that come up, and some not until you're deep into the game as I mentioned.
+[TODO] Multiple unique event mechanics.
+
+5. General
+
+- Clearly differentiate between different kinds of multipliers. For example, there are the additive multipliers (from the Paradigms) and the multipliers (x2 e.g.) from the Metaphilosophy. But how does Wisdom work? How does Infinite Potential work? How does Innate Wisdom work? Are these SEPARATE multipliers? Or are they additive with the Metaphilosophy multipliers? It would be cool if this was laid out very clearly in the game, though I'm not sure how that would look.
+[TODO] Multiplier breakdown display.
+
+- Better differentiation between paradigms: color scheme is not enough. I'm not sure what would help.. but maybe paradigms could change the... texture of the interface too? Like you go from something paper-like to something mechanical..? Or imagery? Do keep mobile in mind though, as most of the user base is on mobile.
+[TODO] Paradigm visual differentiation beyond color.
+
+- Increasing dopamine hits: when you unlock something, it should generate a big dopamine burst. If you're unlocking a Metaphilosophy multiplier, for example, that's a big moment. Maybe have a little popup that shows a big chonky new multiplier and the effect it has on your existing multipliers? Or something.
+[TODO] Bigger unlock celebrations / popups.
+
+- 'Buy x1, x10, max' -- I've put many hours into this game and have never used anything except Buy x1. The game is not about buying tons of them: the prices ramp up too quickly for that. It is about buying as many as you can without it being unsustainable, and then wagering again and again until you get lucky and hit a huge total. I like that the game works this way! But these buttons are needless.
+[DONE - v0.2.0] Removed Buy x1/x10/Max buttons. Always buys one at a time now.
